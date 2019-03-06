@@ -6,59 +6,66 @@
 
 using namespace std;
 
-void print_node(onnx::NodeProto *node) {
-/*
-    cout << "Node Name: "<< node.name() << endl;
-    for (int i = 0; i < node.input_size(); i++) {
-        cout << "input: "<< node.input(i) << endl;
-    }
-    for (int i = 0; i < node.output_size(); i++) {
-        cout <<"output: "<< node.output(i) <<endl;
-    }
-    cout << "op_type: "<< node.op_type() <<endl;
-    cout << "domain: "<<node.domain() << endl;
-    */
-}
-
 int
 print_data_type(int type) {
     switch(type) {
         case 1:
             cout <<" Float";
             return 4;
-        case 7:
-            cout <<" Int64";
-            return 8;
-        default:
-            cout << type;
-            exit(-1);   //Not supported
+        case 2:
+            cout << " UInt8";
+            return 1;
+        case 3:
+            cout << " Int8";
+            return 1;
+        case 4:
+            cout << " UInt16";
+            return 2;
+        case 5:
+            cout << " Int16";
+            return 2;
+        case 6:
+            cout << " Int32";
             return 4;
+        case 7:
+            cout << " Int64";
+            return 8;
+        case 8:
+            cout << " String";
+            return 1;
+        case 9:
+            cout << " Bool";
+            return 1;
+        case 10:
+            cout << " Float16";
+            return 2;
+        case 11:
+            cout << " Double";
+            return 8;
+        case 12:
+            cout << " Uint32";
+            return 4;
+        case 13:
+            cout << " Uint64";
+            return 8;
+        case 14:
+            cout << " Complex64";
+            return 4;
+        case 15:
+            cout << " Complex128";
+            return 8;
+        case 16:
+            cout << " Bfloat16";
+            return 2;
+        default:
+            cout << "Unknown type. Exiting.." << type;
+            exit(-1);   //Not supported
+            return 0;
     }
 }
 
-/*
-inline int endian_swap(unsigned int x)
+void SwapBytes(char *p, size_t n)
 {
-    x = (x>>24) |
-        ((x<<8) & 0x00FF0000) |
-        ((x>>8) & 0x0000FF00) |
-        (x<<24);
-    return x;
-}
-inline int endian_swap8(unsigned int x)
-{
-    x = (x>>24) |
-        ((x<<8) & 0x00FF0000) |
-        ((x>>8) & 0x0000FF00) |
-        (x<<24);
-    return x;
-}
-*/
-
-void SwapBytes(void *pv, size_t n)
-{
-    assert(n > 0);
-    char *p = (char*)pv;
     size_t lo, hi;
     for(lo=0, hi=n-1; hi>lo; lo++, hi--)
     {
@@ -67,10 +74,9 @@ void SwapBytes(void *pv, size_t n)
         p[hi] = tmp;
     }
 }
-#define SWAP(x, n) SwapBytes(&x, n);
 
 void
-print_tensor_init(onnx::TensorProto *init) {
+conv_tensor_init(onnx::TensorProto *init) {
     int size;
     cout<< "Dims: ";
     for (int i = 0; i < init->dims_size(); i++) {
@@ -81,23 +87,19 @@ print_tensor_init(onnx::TensorProto *init) {
     cout<<"Data Type: ";
     size = print_data_type(init->data_type());
     cout << endl;
-    //cout <<"doc_string: "<< init.doc_string() <<endl;
 
-    //cout <<"external_data: "<<endl;
-    //for (int i=0; i< init.external_data_size(); i++) {
-    //    cout << "Key: " << init.external_data(i).key() << " Value: " << init.external_data(i).value() <<endl;
-    //}
-    string *data = init->mutable_raw_data();
-    //cout <<"raw_data: " << data <<endl;
-    char* ptr = (char*)data->c_str();
-    cout <<"Raw Data: Converted "<<data->length() << endl;
-    for (int i =0; i < data->length(); i += size) {
-        //cout << hex << ptr[i] << " ";
-        //ptr[i] = endian_swap(ptr[i]);
-        SWAP(ptr[i], size)
-        //cout << ptr[i] << " ";
+    if (!init->has_raw_data()) {
+        cout <<"Endian Conversion not needed."<< endl;
+        return;
     }
-    //init.mutable_raw_data();
+
+    string *data = init->mutable_raw_data();
+    char* ptr = (char*)data->c_str();
+    for (int i =0; i < data->length(); i += size) {
+        if (size != 1)
+            SwapBytes(&ptr[i], size); //Convert the endianess
+    }
+    cout <<"Raw Data: Converted "<<data->length() << " Bytes" << endl;
     cout << endl;
    
 
@@ -121,18 +123,13 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    cout<<"ir_version: " << model.ir_version() << endl;
+    cout<<"Model ir_version: " << model.ir_version() << endl;
 
     onnx::GraphProto *graph = model.mutable_graph();
 
-    for (int i = 0; i < graph->node_size(); i++) {
-        onnx::NodeProto *node = graph->mutable_node(i);
-        print_node(node);
-    }
-
     for (int i=0; i < graph->initializer_size(); i++){
         onnx::TensorProto *initializer = graph->mutable_initializer(i);
-        print_tensor_init(initializer);
+        conv_tensor_init(initializer);
     }
 
     {
@@ -144,9 +141,9 @@ int main(int argc, char* argv[]) {
     }
 
 
-        
-
     google::protobuf::ShutdownProtobufLibrary();
+
+    cout << "Model successfully converted.."<< endl;
     return 0;
 }
                  
