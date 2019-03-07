@@ -1,7 +1,7 @@
 # onnx-convertor-le-be
 **ONNX Convertor to convert ONNX Models from LE to BE and Vice Versa**
 
-I use this code(onnx_conv.cc) to convert onnx models from LE to BE and vice versa. 
+I use this code(onnx_conv.cc) to convert onnx models from Little Endian to Big Endian and vice versa. 
 Have done some minimal testing to run my models b/w mac and AIX systems.
 
 ## Compile command that i use on MAC
