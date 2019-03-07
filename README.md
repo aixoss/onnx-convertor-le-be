@@ -20,5 +20,21 @@ onnx_conv.cc onnx.pb.cc -o onnx_conv -std=c++11 -lpthread -L /Users/shajithchand
 **Note:** You need to correctly include the correct version of the protobuf header files. The onnx.pb.cc and onnx.pb.h 
 can be picked up from the onnx build or you can build it your self using the .proto files from the onnx github.
 
-
 The onnx_read.cc was written to examine the file content mainly for debugging while developing this tool.
+
+## Run ONNX models from ONNX Model Zoo on Big Endian Machine
+Used the converted models from onnx model repo(https://github.com/onnx/models) and was able to successfully do inferencing on Big Endian Machine(AIX).
+Steps:
+1. First convert the required model to Big Endian
+  ```
+  ./onnx_conv ./model.onnx ./resnet50.onnx.be
+  ```
+2. You need to convert the sample input/output files too that are hosted along with the models. Use tensor_conv.cc code to do the same.
+  ```
+  ./tensor_conv ./test_data_set_0/input_0.pb ./test_data_set_0/input_0.pb.be
+  ./tensor_conv ./test_data_set_0/output_0.pb ./test_data_set_0/output_0.pb.be
+  ```
+3. Take the files to Big Endian machine for inferencing. Sample inferencing code is given in onnx model repo github to compare the output of your program with the reference output.
+
+
+
